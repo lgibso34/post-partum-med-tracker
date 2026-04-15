@@ -40,6 +40,13 @@ export function nowIsoUtc(): string {
   return new Date().toISOString();
 }
 
+export function takenAtForDate(ymd: string): string {
+  if (ymd === todayInTZ()) return nowIsoUtc();
+  const hhmmss = formatInTimeZone(new Date(), TZ, 'HH:mm:ss');
+  const local = `${ymd} ${hhmmss}`;
+  return fromZonedTime(local, TZ).toISOString();
+}
+
 export function isoToHHmm(iso: string): string {
   return formatInTimeZone(iso, TZ, 'HH:mm');
 }

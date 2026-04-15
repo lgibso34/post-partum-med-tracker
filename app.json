@@ -34,7 +34,7 @@
     "scheme": "post-partum-med-tracker",
     "experiments": {
       "typedRoutes": true,
-      "baseUrl": "/post-partum-med-tracker"
+      "baseUrl": "/"
     }
   }
 }

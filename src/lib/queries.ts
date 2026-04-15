@@ -5,7 +5,7 @@ import {
   type UseMutationResult,
 } from '@tanstack/react-query';
 import { supabase, type DoseRecord, type MedicineRecord } from './supabase';
-import { dayBoundsUtc, nowIsoUtc } from './time';
+import { dayBoundsUtc, nowIsoUtc, takenAtForDate } from './time';
 
 export const medicineKey = ['medicines'] as const;
 export const dosesKey = (date: string) => ['doses', date] as const;
@@ -197,12 +197,12 @@ export function useUpdateMedicineNotes() {
 export function useAddDose(date: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { medicineId: string; userId: string }) => {
+    mutationFn: async (input: { medicineId: string; userId: string; takenAt?: string }) => {
       const { data, error } = await supabase
         .from('doses')
         .insert({
           medicine_id: input.medicineId,
-          taken_at: nowIsoUtc(),
+          taken_at: input.takenAt ?? takenAtForDate(date),
           logged_by: input.userId,
         })
         .select()
@@ -216,7 +216,7 @@ export function useAddDose(date: string) {
       const optimistic: DoseRecord = {
         id: `optim-${Math.random().toString(36).slice(2)}`,
         medicine_id: input.medicineId,
-        taken_at: nowIsoUtc(),
+        taken_at: input.takenAt ?? takenAtForDate(date),
         logged_by: input.userId,
         note: null,
         created_at: nowIsoUtc(),
@@ -240,7 +240,7 @@ export function useAddDose(date: string) {
     onError: (_err, _input, ctx) => {
       if (ctx?.prev) qc.setQueryData(dosesKey(date), ctx.prev);
     },
-    onSettled: () => qc.invalidateQueries({ queryKey: dosesKey(date) }),
+    onSettled: () => qc.invalidateQueries({ queryKey: ['doses'] }),
   });
 }
 
@@ -257,7 +257,7 @@ export function useUpdateDose(date: string) {
       if (error) throw error;
       return data as DoseRecord;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: dosesKey(date) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['doses'] }),
   });
 }
 
@@ -289,6 +289,6 @@ export function useDeleteDose(date: string) {
     onError: (_e, _id, ctx) => {
       if (ctx?.prev) qc.setQueryData(dosesKey(date), ctx.prev);
     },
-    onSettled: () => qc.invalidateQueries({ queryKey: dosesKey(date) }),
+    onSettled: () => qc.invalidateQueries({ queryKey: ['doses'] }),
   });
 }

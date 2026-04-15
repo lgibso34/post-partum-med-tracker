@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import type { DoseRecord, MedicineRecord } from '../lib/supabase';
-import { formatTime, hhmmToIso, isoToHHmm } from '../lib/time';
+import { formatTime, hhmmToIso, isoToHHmm, nowIsoUtc } from '../lib/time';
 import {
   useAddDose,
   useArchiveMedicine,
@@ -71,12 +71,15 @@ export function MedicineColumn({ medicine, doses, date, width }: Props) {
     updateNotes.mutate({ id: medicine.id, notes: next });
   };
   const [editing, setEditing] = useState<DoseRecord | null>(null);
+  const [adding, setAdding] = useState(false);
   const [editValue, setEditValue] = useState('');
   const [editError, setEditError] = useState<string | null>(null);
 
   const handleAdd = () => {
     if (!userId) return;
-    addDose.mutate({ medicineId: medicine.id, userId });
+    setAdding(true);
+    setEditValue(isoToHHmm(nowIsoUtc()));
+    setEditError(null);
   };
 
   const openEdit = (d: DoseRecord) => {
@@ -87,28 +90,35 @@ export function MedicineColumn({ medicine, doses, date, width }: Props) {
 
   const closeEdit = () => {
     setEditing(null);
+    setAdding(false);
     setEditError(null);
   };
 
   const handleSaveEdit = () => {
-    if (!editing) return;
     const iso = hhmmToIso(date, editValue);
     if (!iso) {
       setEditError('Use 24-hour HH:MM (e.g. 14:30)');
       return;
     }
+    if (adding) {
+      if (!userId) return;
+      addDose.mutate(
+        { medicineId: medicine.id, userId, takenAt: iso },
+        { onSuccess: closeEdit }
+      );
+      return;
+    }
+    if (!editing) return;
     updateDose.mutate(
       { id: editing.id, taken_at: iso },
       { onSuccess: closeEdit }
     );
   };
 
-  const handleDeleteFromEdit = async () => {
+  const handleDeleteFromEdit = () => {
     if (!editing) return;
-    if (await confirm(`Delete dose at ${formatTime(editing.taken_at)}?`)) {
-      deleteDose.mutate(editing.id);
-      closeEdit();
-    }
+    deleteDose.mutate(editing.id);
+    closeEdit();
   };
 
   const handleRename = async () => {
@@ -196,14 +206,14 @@ export function MedicineColumn({ medicine, doses, date, width }: Props) {
       </Pressable>
 
       <Modal
-        visible={editing !== null}
+        visible={editing !== null || adding}
         transparent
         animationType="fade"
         onRequestClose={closeEdit}
       >
         <Pressable style={styles.modalBackdrop} onPress={closeEdit}>
           <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
-            <Text style={styles.modalTitle}>Edit dose time</Text>
+            <Text style={styles.modalTitle}>{adding ? 'Add dose time' : 'Edit dose time'}</Text>
             <Text style={styles.modalHint}>24-hour format (HH:MM)</Text>
             <TextInput
               value={editValue}
@@ -220,16 +230,18 @@ export function MedicineColumn({ medicine, doses, date, width }: Props) {
             />
             {editError && <Text style={styles.modalError}>{editError}</Text>}
             <View style={styles.modalActions}>
-              <Pressable
-                onPress={handleDeleteFromEdit}
-                style={({ pressed }) => [
-                  styles.modalBtn,
-                  styles.modalDeleteBtn,
-                  pressed && styles.pressed,
-                ]}
-              >
-                <Text style={styles.modalDeleteText}>Delete</Text>
-              </Pressable>
+              {!adding && (
+                <Pressable
+                  onPress={handleDeleteFromEdit}
+                  style={({ pressed }) => [
+                    styles.modalBtn,
+                    styles.modalDeleteBtn,
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <Text style={styles.modalDeleteText}>Delete</Text>
+                </Pressable>
+              )}
               <View style={styles.modalSpacer} />
               <Pressable
                 onPress={closeEdit}
