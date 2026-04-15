@@ -4,10 +4,11 @@ import { Redirect } from 'expo-router';
 import { useAuth } from '../lib/auth';
 
 export default function Login() {
-  const { isValid, isUnauthorized, login, logout } = useAuth();
+  const { ready, isValid, isUnauthorized, login, logout } = useAuth();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  if (!ready) return null;
   if (isValid) return <Redirect href="/" />;
 
   const onPress = async () => {

@@ -4,8 +4,9 @@ import { useAuth } from '../lib/auth';
 import { MedicineHistoryGrid } from '../components/MedicineHistoryGrid';
 
 export default function Home() {
-  const { isValid, userName, logout } = useAuth();
+  const { ready, isValid, userName, logout } = useAuth();
 
+  if (!ready) return null;
   if (!isValid) return <Redirect href="/login" />;
 
   return (

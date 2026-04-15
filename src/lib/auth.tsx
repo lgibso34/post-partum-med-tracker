@@ -3,6 +3,7 @@ import type { Session } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 
 type AuthState = {
+  ready: boolean;
   isValid: boolean;
   isUnauthorized: boolean;
   userId: string | null;
@@ -73,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ isValid, isUnauthorized, userId, userName, discordId, login, logout }}
+      value={{ ready, isValid, isUnauthorized, userId, userName, discordId, login, logout }}
     >
       {children}
     </AuthContext.Provider>
