@@ -1,6 +1,13 @@
-import { useMemo } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useAllDosesForMedicine } from '../lib/queries';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { useAllDosesForMedicine, useUpdateMedicineNotes } from '../lib/queries';
 import { formatDateHeader, formatTime, isoToYmd, todayInTZ } from '../lib/time';
 import type { DoseRecord, MedicineRecord } from '../lib/supabase';
 
@@ -28,6 +35,16 @@ export function HistoryColumn({
   onAdd: (medicineId: string, date: string) => void;
 }) {
   const dosesQ = useAllDosesForMedicine(medicine.id);
+  const updateNotes = useUpdateMedicineNotes();
+  const [notesDraft, setNotesDraft] = useState(medicine.notes ?? '');
+  useEffect(() => {
+    setNotesDraft(medicine.notes ?? '');
+  }, [medicine.id, medicine.notes]);
+  const commitNotes = () => {
+    const next = notesDraft;
+    if ((medicine.notes ?? '') === next) return;
+    updateNotes.mutate({ id: medicine.id, notes: next });
+  };
   const grouped = useMemo(() => {
     const byDate: Record<string, DoseRecord[]> = {};
     for (const d of dosesQ.data ?? []) {
@@ -50,6 +67,15 @@ export function HistoryColumn({
           {medicine.name}
         </Text>
       </View>
+      <TextInput
+        value={notesDraft}
+        onChangeText={setNotesDraft}
+        onBlur={commitNotes}
+        placeholder="Notes"
+        placeholderTextColor="#a8a29e"
+        multiline
+        style={styles.notesInput}
+      />
       <Pressable
         onPress={() => onAdd(medicine.id, todayInTZ())}
         style={({ pressed }) => [
@@ -123,6 +149,20 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   columnTitle: { fontSize: 14, fontWeight: '700' },
+  notesInput: {
+    marginHorizontal: 10,
+    marginTop: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#e7e5e4',
+    borderRadius: 8,
+    backgroundColor: '#fafaf9',
+    fontSize: 13,
+    color: '#1c1917',
+    minHeight: 56,
+    textAlignVertical: 'top',
+  },
   columnAddBtn: {
     margin: 10,
     paddingVertical: 10,
