@@ -1,4 +1,4 @@
-import { formatInTimeZone, fromZonedTime, toZonedTime } from 'date-fns-tz';
+import { formatInTimeZone, fromZonedTime } from 'date-fns-tz';
 import { format } from 'date-fns';
 
 export const TZ = 'America/New_York';
@@ -14,26 +14,6 @@ export function formatDateHeader(ymd: string): string {
 
 export function formatTime(iso: string): string {
   return formatInTimeZone(iso, TZ, 'h:mm a');
-}
-
-export function shiftDay(ymd: string, delta: number): string {
-  const [y, m, d] = ymd.split('-').map(Number);
-  const dt = new Date(y, m - 1, d);
-  dt.setDate(dt.getDate() + delta);
-  return format(dt, 'yyyy-MM-dd');
-}
-
-export function dayBoundsUtc(ymd: string): { startIso: string; endIso: string } {
-  const startLocal = `${ymd} 00:00:00`;
-  const endLocal = `${shiftDay(ymd, 1)} 00:00:00`;
-  return {
-    startIso: fromZonedTime(startLocal, TZ).toISOString(),
-    endIso: fromZonedTime(endLocal, TZ).toISOString(),
-  };
-}
-
-export function isoToLocalDate(iso: string): Date {
-  return toZonedTime(iso, TZ);
 }
 
 export function nowIsoUtc(): string {

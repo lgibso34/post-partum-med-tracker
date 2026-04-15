@@ -5,10 +5,10 @@ import {
   type UseMutationResult,
 } from '@tanstack/react-query';
 import { supabase, type DoseRecord, type MedicineRecord } from './supabase';
-import { dayBoundsUtc, nowIsoUtc, takenAtForDate } from './time';
+import { nowIsoUtc, takenAtForDate } from './time';
 
 export const medicineKey = ['medicines'] as const;
-export const dosesKey = (date: string) => ['doses', date] as const;
+const dosesKey = (date: string) => ['doses', date] as const;
 
 const DEV_MOCK = false// __DEV__ && process.env.EXPO_PUBLIC_SKIP_LOGIN === '1';
 
@@ -75,34 +75,6 @@ export function useAllDosesForMedicine(medicineId: string | null) {
         .order('taken_at', { ascending: false });
       if (error) throw error;
       return data as DoseRecord[];
-    },
-  });
-}
-
-export function useDosesForDate(date: string) {
-  return useQuery({
-    queryKey: dosesKey(date),
-    queryFn: async () => {
-      if (DEV_MOCK) {
-        const list = mockDosesForToday();
-        const byMedicine: Record<string, DoseRecord[]> = {};
-        for (const d of list) (byMedicine[d.medicine_id] ??= []).push(d);
-        return { list, byMedicine };
-      }
-      const { startIso, endIso } = dayBoundsUtc(date);
-      const { data, error } = await supabase
-        .from('doses')
-        .select('*')
-        .gte('taken_at', startIso)
-        .lt('taken_at', endIso)
-        .order('taken_at', { ascending: true });
-      if (error) throw error;
-      const list = (data ?? []) as DoseRecord[];
-      const byMedicine: Record<string, DoseRecord[]> = {};
-      for (const d of list) {
-        (byMedicine[d.medicine_id] ??= []).push(d);
-      }
-      return { list, byMedicine };
     },
   });
 }
