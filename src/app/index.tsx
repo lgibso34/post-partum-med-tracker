@@ -1,5 +1,5 @@
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 import { useAuth } from '../lib/auth';
 import { useAppStore } from '../stores/appStore';
 import { useDosesForDate, useMedicines } from '../lib/queries';
@@ -18,9 +18,11 @@ function columnCountFor(width: number): number {
 }
 
 export default function Tracker() {
-  const { userName, logout } = useAuth();
+  const { isValid, userName, logout } = useAuth();
   const router = useRouter();
   const selectedDate = useAppStore((s) => s.selectedDate);
+
+  if (!isValid) return <Redirect href="/login" />;
   const { width } = useWindowDimensions();
   const medicinesQ = useMedicines();
   const dosesQ = useDosesForDate(selectedDate);

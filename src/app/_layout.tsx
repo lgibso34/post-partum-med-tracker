@@ -1,9 +1,8 @@
-import { Slot, useRootNavigationState, useRouter, useSegments } from 'expo-router';
-import { useEffect } from 'react';
+import { Slot } from 'expo-router';
 import { StyleSheet } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider, useAuth } from '../lib/auth';
+import { AuthProvider } from '../lib/auth';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -11,32 +10,13 @@ const queryClient = new QueryClient({
   },
 });
 
-function AuthGate() {
-  const { isValid } = useAuth();
-  const router = useRouter();
-  const segments = useSegments();
-  const navState = useRootNavigationState();
-
-  useEffect(() => {
-    if (!navState?.key) return;
-    const onLogin = segments[0] === 'login';
-    if (!isValid && !onLogin) {
-      router.replace('/login');
-    } else if (isValid && onLogin) {
-      router.replace('/');
-    }
-  }, [isValid, segments, router, navState?.key]);
-
-  return <Slot />;
-}
-
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <SafeAreaView style={styles.container}>
-            <AuthGate />
+            <Slot />
           </SafeAreaView>
         </AuthProvider>
       </QueryClientProvider>

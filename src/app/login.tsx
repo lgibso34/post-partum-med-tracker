@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Redirect } from 'expo-router';
 import { useAuth } from '../lib/auth';
 
 export default function Login() {
-  const { login } = useAuth();
+  const { isValid, login } = useAuth();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  if (isValid) return <Redirect href="/" />;
 
   const onPress = async () => {
     setPending(true);
