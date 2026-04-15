@@ -10,43 +10,10 @@ import { nowIsoUtc, takenAtForDate } from './time';
 export const medicineKey = ['medicines'] as const;
 const dosesKey = (date: string) => ['doses', date] as const;
 
-const DEV_MOCK = false// __DEV__ && process.env.EXPO_PUBLIC_SKIP_LOGIN === '1';
-
-const mockMedicines: MedicineRecord[] = [
-  { id: 'm1', name: 'Tylenol', color: '#ef4444', notes: null, archived: false, sort_order: 0, created_at: '', updated_at: '' },
-  { id: 'm2', name: 'Ibuprofen', color: '#f97316', notes: null, archived: false, sort_order: 1, created_at: '', updated_at: '' },
-  { id: 'm3', name: 'Iron', color: '#10b981', notes: null, archived: false, sort_order: 2, created_at: '', updated_at: '' },
-  { id: 'm4', name: 'Prenatal', color: '#a855f7', notes: null, archived: false, sort_order: 3, created_at: '', updated_at: '' },
-];
-
-function mockDosesForToday(): DoseRecord[] {
-  const mk = (id: string, medicine_id: string, hour: number, minute: number): DoseRecord => {
-    const d = new Date();
-    d.setHours(hour, minute, 0, 0);
-    return {
-      id,
-      medicine_id,
-      taken_at: d.toISOString(),
-      logged_by: 'dev-user',
-      note: null,
-      created_at: d.toISOString(),
-    };
-  };
-  return [
-    mk('d1', 'm1', 8, 14),
-    mk('d2', 'm1', 12, 45),
-    mk('d3', 'm2', 9, 2),
-    mk('d4', 'm2', 14, 10),
-    mk('d5', 'm3', 7, 30),
-    mk('d6', 'm4', 7, 35),
-  ];
-}
-
 export function useMedicines() {
   return useQuery({
     queryKey: medicineKey,
     queryFn: async () => {
-      if (DEV_MOCK) return mockMedicines;
       const { data, error } = await supabase
         .from('medicines')
         .select('*')
@@ -65,9 +32,6 @@ export function useAllDosesForMedicine(medicineId: string | null) {
     enabled: !!medicineId,
     queryFn: async () => {
       if (!medicineId) return [] as DoseRecord[];
-      if (DEV_MOCK) {
-        return mockDosesForToday().filter((d) => d.medicine_id === medicineId);
-      }
       const { data, error } = await supabase
         .from('doses')
         .select('*')

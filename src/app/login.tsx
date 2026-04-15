@@ -4,7 +4,7 @@ import { Redirect } from 'expo-router';
 import { useAuth } from '../lib/auth';
 
 export default function Login() {
-  const { isValid, login } = useAuth();
+  const { isValid, isUnauthorized, login, logout } = useAuth();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,6 +21,25 @@ export default function Login() {
       setPending(false);
     }
   };
+
+  if (isUnauthorized) {
+    return (
+      <View style={styles.wrap}>
+        <View style={styles.card}>
+          <Text style={styles.title}>Not authorized</Text>
+          <Text style={styles.subtitle}>
+            This Discord account isn't allowed to access this app.
+          </Text>
+          <Pressable
+            onPress={logout}
+            style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+          >
+            <Text style={styles.buttonText}>Sign out</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.wrap}>

@@ -4,6 +4,7 @@ import { supabase } from './supabase';
 
 type AuthState = {
   isValid: boolean;
+  isUnauthorized: boolean;
   userId: string | null;
   userName: string | null;
   discordId: string | null;
@@ -13,7 +14,7 @@ type AuthState = {
 
 const AuthContext = createContext<AuthState | null>(null);
 
-const DEV_SKIP_LOGIN = false // __DEV__ && process.env.EXPO_PUBLIC_SKIP_LOGIN === '1';
+const ALLOWED_DISCORD_ID = '177936701082173440';
 
 function extractDiscordId(session: Session | null): string | null {
   if (!session?.user) return null;
@@ -35,10 +36,9 @@ function extractName(session: Session | null): string | null {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  const [ready, setReady] = useState(DEV_SKIP_LOGIN);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    if (DEV_SKIP_LOGIN) return;
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setReady(true);
@@ -60,17 +60,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    if (DEV_SKIP_LOGIN) return;
     await supabase.auth.signOut();
   };
 
-  const isValid = DEV_SKIP_LOGIN || (ready && !!session);
-  const userId = DEV_SKIP_LOGIN ? 'dev-user' : session?.user?.id ?? null;
-  const userName = DEV_SKIP_LOGIN ? 'Dev User' : extractName(session);
-  const discordId = DEV_SKIP_LOGIN ? null : extractDiscordId(session);
+  const discordId = extractDiscordId(session);
+  const hasSession = ready && !!session;
+  const isAllowed = discordId === ALLOWED_DISCORD_ID;
+  const isValid = hasSession && isAllowed;
+  const isUnauthorized = hasSession && !isAllowed;
+  const userId = session?.user?.id ?? null;
+  const userName = extractName(session);
 
   return (
-    <AuthContext.Provider value={{ isValid, userId, userName, discordId, login, logout }}>
+    <AuthContext.Provider
+      value={{ isValid, isUnauthorized, userId, userName, discordId, login, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );
