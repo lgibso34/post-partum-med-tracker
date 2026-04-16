@@ -8,19 +8,27 @@ export function AddMedicineCard({ width }: { width: number }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [color, setColor] = useState(COLORS[0]);
+  const [interval, setInterval] = useState('');
   const addMedicine = useAddMedicine();
 
   const reset = () => {
     setName('');
     setColor(COLORS[0]);
+    setInterval('');
     setOpen(false);
   };
 
   const submit = () => {
     const trimmed = name.trim();
     if (!trimmed) return;
+    let dose_interval_hours: number | null = null;
+    const rawInterval = interval.trim();
+    if (rawInterval !== '') {
+      const parsed = Number.parseFloat(rawInterval);
+      if (Number.isFinite(parsed) && parsed > 0) dose_interval_hours = parsed;
+    }
     addMedicine.mutate(
-      { name: trimmed, color },
+      { name: trimmed, color, dose_interval_hours },
       { onSuccess: reset }
     );
   };
@@ -67,6 +75,19 @@ export function AddMedicineCard({ width }: { width: number }) {
             ]}
           />
         ))}
+      </View>
+      <View style={styles.intervalRow}>
+        <Text style={styles.intervalLabel}>Every</Text>
+        <TextInput
+          value={interval}
+          onChangeText={setInterval}
+          placeholder="—"
+          placeholderTextColor="#a8a29e"
+          keyboardType="decimal-pad"
+          inputMode="decimal"
+          style={styles.intervalInput}
+        />
+        <Text style={styles.intervalLabel}>hrs (optional)</Text>
       </View>
       <View style={styles.formActions}>
         <Pressable
@@ -126,6 +147,20 @@ const styles = StyleSheet.create({
     color: '#1c1917',
   },
   colorRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  intervalRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  intervalLabel: { fontSize: 12, color: '#78716c' },
+  intervalInput: {
+    width: 60,
+    borderWidth: 1,
+    borderColor: '#e7e5e4',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    backgroundColor: '#fafaf9',
+    fontSize: 13,
+    color: '#1c1917',
+    fontVariant: ['tabular-nums'],
+  },
   colorDot: {
     width: 24,
     height: 24,

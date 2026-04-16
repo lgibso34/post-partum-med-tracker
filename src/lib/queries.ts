@@ -46,7 +46,7 @@ export function useAllDosesForMedicine(medicineId: string | null) {
 export function useAddMedicine(): UseMutationResult<
   MedicineRecord,
   Error,
-  { name: string; color?: string }
+  { name: string; color?: string; dose_interval_hours?: number | null }
 > {
   const qc = useQueryClient();
   return useMutation({
@@ -56,6 +56,7 @@ export function useAddMedicine(): UseMutationResult<
         .insert({
           name: input.name,
           color: input.color ?? null,
+          dose_interval_hours: input.dose_interval_hours ?? null,
           archived: false,
           sort_order: 0,
         })
@@ -120,6 +121,36 @@ export function useUpdateMedicineNotes() {
       const prev = qc.getQueryData<MedicineRecord[]>(medicineKey);
       qc.setQueryData<MedicineRecord[]>(medicineKey, (old) =>
         old?.map((m) => (m.id === input.id ? { ...m, notes: input.notes } : m))
+      );
+      return { prev };
+    },
+    onError: (_e, _input, ctx) => {
+      if (ctx?.prev) qc.setQueryData(medicineKey, ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: medicineKey }),
+  });
+}
+
+export function useUpdateMedicineInterval() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { id: string; dose_interval_hours: number | null }) => {
+      const { data, error } = await supabase
+        .from('medicines')
+        .update({ dose_interval_hours: input.dose_interval_hours })
+        .eq('id', input.id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as MedicineRecord;
+    },
+    onMutate: async (input) => {
+      await qc.cancelQueries({ queryKey: medicineKey });
+      const prev = qc.getQueryData<MedicineRecord[]>(medicineKey);
+      qc.setQueryData<MedicineRecord[]>(medicineKey, (old) =>
+        old?.map((m) =>
+          m.id === input.id ? { ...m, dose_interval_hours: input.dose_interval_hours } : m
+        )
       );
       return { prev };
     },

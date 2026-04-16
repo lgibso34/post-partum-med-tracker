@@ -7,7 +7,11 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useAllDosesForMedicine, useUpdateMedicineNotes } from '../lib/queries';
+import {
+  useAllDosesForMedicine,
+  useUpdateMedicineInterval,
+  useUpdateMedicineNotes,
+} from '../lib/queries';
 import { formatDateHeader, formatTime, isoToYmd, todayInTZ } from '../lib/time';
 import type { DoseRecord, MedicineRecord } from '../lib/supabase';
 
@@ -36,14 +40,39 @@ export function HistoryColumn({
 }) {
   const dosesQ = useAllDosesForMedicine(medicine.id);
   const updateNotes = useUpdateMedicineNotes();
+  const updateInterval = useUpdateMedicineInterval();
   const [notesDraft, setNotesDraft] = useState(medicine.notes ?? '');
+  const [intervalDraft, setIntervalDraft] = useState(
+    medicine.dose_interval_hours == null ? '' : String(medicine.dose_interval_hours)
+  );
   useEffect(() => {
     setNotesDraft(medicine.notes ?? '');
   }, [medicine.id, medicine.notes]);
+  useEffect(() => {
+    setIntervalDraft(
+      medicine.dose_interval_hours == null ? '' : String(medicine.dose_interval_hours)
+    );
+  }, [medicine.id, medicine.dose_interval_hours]);
   const commitNotes = () => {
     const next = notesDraft;
     if ((medicine.notes ?? '') === next) return;
     updateNotes.mutate({ id: medicine.id, notes: next });
+  };
+  const commitInterval = () => {
+    const raw = intervalDraft.trim();
+    const current = medicine.dose_interval_hours;
+    if (raw === '') {
+      if (current == null) return;
+      updateInterval.mutate({ id: medicine.id, dose_interval_hours: null });
+      return;
+    }
+    const parsed = Number.parseFloat(raw);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      setIntervalDraft(current == null ? '' : String(current));
+      return;
+    }
+    if (parsed === current) return;
+    updateInterval.mutate({ id: medicine.id, dose_interval_hours: parsed });
   };
   const grouped = useMemo(() => {
     const byDate: Record<string, DoseRecord[]> = {};
@@ -76,6 +105,20 @@ export function HistoryColumn({
         multiline
         style={styles.notesInput}
       />
+      <View style={styles.intervalRow}>
+        <Text style={styles.intervalLabel}>Every</Text>
+        <TextInput
+          value={intervalDraft}
+          onChangeText={setIntervalDraft}
+          onBlur={commitInterval}
+          placeholder="—"
+          placeholderTextColor="#a8a29e"
+          keyboardType="decimal-pad"
+          inputMode="decimal"
+          style={styles.intervalInput}
+        />
+        <Text style={styles.intervalLabel}>hrs</Text>
+      </View>
       <Pressable
         onPress={() => onAdd(medicine.id, todayInTZ())}
         style={({ pressed }) => [
@@ -162,6 +205,26 @@ const styles = StyleSheet.create({
     color: '#1c1917',
     minHeight: 56,
     textAlignVertical: 'top',
+  },
+  intervalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginHorizontal: 10,
+    marginTop: 8,
+  },
+  intervalLabel: { fontSize: 12, color: '#78716c' },
+  intervalInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#e7e5e4',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    backgroundColor: '#fafaf9',
+    fontSize: 13,
+    color: '#1c1917',
+    fontVariant: ['tabular-nums'],
   },
   columnAddBtn: {
     margin: 10,

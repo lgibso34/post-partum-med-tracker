@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Redirect } from 'expo-router';
 import { useAuth } from '../lib/auth';
 import { MedicineHistoryGrid } from '../components/MedicineHistoryGrid';
+import { UpcomingDosesModal } from '../components/UpcomingDosesModal';
 
 export default function Home() {
   const { ready, isValid, userName, logout } = useAuth();
+  const [upcomingOpen, setUpcomingOpen] = useState(false);
 
   if (!ready) return null;
   if (!isValid) return <Redirect href="/login" />;
@@ -14,6 +17,12 @@ export default function Home() {
       <View style={styles.topBar}>
         <Text style={styles.brand}>Post-Partum Med Tracker</Text>
         <View style={styles.topBarRight}>
+          <Pressable
+            onPress={() => setUpcomingOpen(true)}
+            style={({ pressed }) => [styles.upcoming, pressed && styles.pressed]}
+          >
+            <Text style={styles.upcomingText}>Upcoming</Text>
+          </Pressable>
           {userName && (
             <Text style={styles.userName} numberOfLines={1}>
               {userName}
@@ -29,6 +38,10 @@ export default function Home() {
       </View>
 
       <MedicineHistoryGrid />
+      <UpcomingDosesModal
+        visible={upcomingOpen}
+        onClose={() => setUpcomingOpen(false)}
+      />
     </View>
   );
 }
@@ -62,6 +75,13 @@ const styles = StyleSheet.create({
     color: '#78716c',
     maxWidth: 120,
   },
+  upcoming: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    backgroundColor: '#0ea5e9',
+  },
+  upcomingText: { fontSize: 12, color: '#fff', fontWeight: '600' },
   logout: {
     paddingHorizontal: 10,
     paddingVertical: 6,

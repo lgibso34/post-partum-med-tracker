@@ -22,6 +22,7 @@ export type MedicineRecord = {
   name: string;
   color: string | null;
   notes: string | null;
+  dose_interval_hours: number | null;
   archived: boolean;
   sort_order: number;
   created_at: string;
