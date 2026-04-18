@@ -15,7 +15,7 @@ type AuthState = {
 
 const AuthContext = createContext<AuthState | null>(null);
 
-const ALLOWED_DISCORD_ID = '177936701082173440';
+const ALLOWED_DISCORD_IDS = ['177936701082173440', '345341167417688064'];
 
 function extractDiscordId(session: Session | null): string | null {
   if (!session?.user) return null;
@@ -66,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const discordId = extractDiscordId(session);
   const hasSession = ready && !!session;
-  const isAllowed = discordId === ALLOWED_DISCORD_ID;
+  const isAllowed = discordId ? ALLOWED_DISCORD_IDS.includes(discordId) : false;
   const isValid = hasSession && isAllowed;
   const isUnauthorized = hasSession && !isAllowed;
   const userId = session?.user?.id ?? null;
