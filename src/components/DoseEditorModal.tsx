@@ -1,4 +1,4 @@
-import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { formatDateHeader, isoToYmd } from '../lib/time';
 import type { DoseEditorModalProps } from './useDoseEditor';
 
@@ -12,6 +12,7 @@ export function DoseEditorModal({
   setModalValue,
   modalError,
   setModalError,
+  saving,
   accent,
   onClose,
   onSave,
@@ -90,13 +91,19 @@ export function DoseEditorModal({
             </Pressable>
             <Pressable
               onPress={onSave}
+              disabled={saving}
               style={({ pressed }) => [
                 styles.modalBtn,
-                { backgroundColor: accent },
+                { backgroundColor: accent, minWidth: 60 },
+                saving && { opacity: 0.7 },
                 pressed && styles.pressed,
               ]}
             >
-              <Text style={styles.modalSaveText}>Save</Text>
+              {saving ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.modalSaveText}>Save</Text>
+              )}
             </Pressable>
           </View>
         </Pressable>

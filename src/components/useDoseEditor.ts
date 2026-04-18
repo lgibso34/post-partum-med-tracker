@@ -15,6 +15,7 @@ export type DoseEditorModalProps = {
   setModalValue: (v: string) => void;
   modalError: string | null;
   setModalError: (v: string | null) => void;
+  saving: boolean;
   accent: string;
   onClose: () => void;
   onSave: () => void;
@@ -66,6 +67,10 @@ export function useDoseEditor(): {
     setModalError(null);
   };
 
+  const onMutationError = (err: Error) => {
+    setModalError(err.message || 'Something went wrong');
+  };
+
   const handleSave = () => {
     if (editing) {
       const iso = hhmmToIso(isoToYmd(editing.taken_at), modalValue);
@@ -75,7 +80,7 @@ export function useDoseEditor(): {
       }
       updateDose.mutate(
         { id: editing.id, taken_at: iso },
-        { onSuccess: closeModal }
+        { onSuccess: closeModal, onError: onMutationError }
       );
       return;
     }
@@ -91,7 +96,7 @@ export function useDoseEditor(): {
       }
       addDose.mutate(
         { medicineId: addingContext.medicineId, userId, takenAt: iso },
-        { onSuccess: closeModal }
+        { onSuccess: closeModal, onError: onMutationError }
       );
     }
   };
@@ -115,6 +120,7 @@ export function useDoseEditor(): {
       setModalValue,
       modalError,
       setModalError,
+      saving: addDose.isPending || updateDose.isPending,
       accent,
       onClose: closeModal,
       onSave: handleSave,
